@@ -111,13 +111,16 @@ int main(void)
 	#define tranacting_number 2
 	const uint8_t address[6] = "00001";
 	
+	HAL_Delay(6000);
+	TM_NRF24L01_Init(72, 32);
   while (1)
   {
     /* USER CODE END WHILE */
-		CDC_Transmit_FS((uint8_t *)"This is a test.\n" ,16);
-		HAL_Delay(1000);
+		//CDC_Transmit_FS((uint8_t *)"This is a test.\n" ,16);
+			HAL_Delay(1000);
+
 		HAL_GPIO_TogglePin(LED1_GPIO_Port ,LED1_Pin);
-		//TM_NRF24L01_Init(72, 32);
+		
 		//TM_NRF24L01_SetTxAddress((uint8_t *)&address);
 		/*
 		HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
