@@ -110,11 +110,15 @@ int main(void)
 	
 	#define tranacting_number 2
 	const uint8_t address[6] = "00001";
+	
   while (1)
   {
     /* USER CODE END WHILE */
-		TM_NRF24L01_Init(72, 32);
-		TM_NRF24L01_SetTxAddress((uint8_t *)&address);
+		CDC_Transmit_FS((uint8_t *)"This is a test.\n" ,16);
+		HAL_Delay(1000);
+		HAL_GPIO_TogglePin(LED1_GPIO_Port ,LED1_Pin);
+		//TM_NRF24L01_Init(72, 32);
+		//TM_NRF24L01_SetTxAddress((uint8_t *)&address);
 		/*
 		HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
 		HAL_Delay(10);
@@ -184,7 +188,7 @@ void make_command(uint8_t * REG, uint8_t cmd , uint8_t state)
   */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage 
@@ -199,7 +203,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 96;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV6;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -211,10 +215,10 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -307,7 +311,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(Csel_GPIO_Port, CSel_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(CSel_GPIO_Port, CSel_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4|INT_Pin, GPIO_PIN_RESET);
@@ -323,7 +327,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(Csel_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(CSel_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC4 INT_Pin */
   GPIO_InitStruct.Pin = GPIO_PIN_4|INT_Pin;

@@ -59,7 +59,7 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 #define CSel_Pin GPIO_PIN_4 				//CSN PIN
-#define Csel_GPIO_Port GPIOA			
+#define CSel_GPIO_Port GPIOA			
 #define INT_Pin GPIO_PIN_5		
 #define INT_GPIO_Port GPIOC
 #define TxRx_Pin GPIO_PIN_0			// CE pin

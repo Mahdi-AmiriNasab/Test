@@ -135,7 +135,7 @@ extern SPI_HandleTypeDef hspi1;
 
 /* SPI chip enable pin */
 #ifndef NRF24L01_CSN_PIN
-#define NRF24L01_CSN_PORT			Csel_GPIO_Port
+#define NRF24L01_CSN_PORT			CSel_GPIO_Port
 #define NRF24L01_CSN_PIN			CSel_Pin
 #endif
 
