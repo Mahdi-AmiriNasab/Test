@@ -24,6 +24,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usbd_cdc_if.h"
+#include "tm_stm32_nrf24l01.h"
 
 /* USER CODE END Includes */
 
@@ -48,7 +50,8 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
-
+uint8_t print_buffer[100] ,nrf_receive [100];
+const uint8_t tx_address[6] = "00001";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -57,7 +60,8 @@ static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_UART4_Init(void);
 /* USER CODE BEGIN PFP */
-
+void make_command(uint8_t * REG, uint8_t cmd , uint8_t state);
+void R_Register (uint8_t addr[], uint8_t byte_to_read ,uint8_t * readed_bytes);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -103,14 +107,76 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	
+	#define tranacting_number 2
+	const uint8_t address[6] = "00001";
   while (1)
   {
     /* USER CODE END WHILE */
-
+		TM_NRF24L01_Init(72, 32);
+		TM_NRF24L01_SetTxAddress((uint8_t *)&address);
+		/*
+		HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
+		HAL_Delay(10);
+		HAL_SPI_TransmitReceive(&hspi1 ,print_buffer ,nrf_receive , tranacting_number ,100);
+		CDC_Transmit_FS(nrf_receive  , tranacting_number);
+		HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_TogglePin(LED2_GPIO_Port ,LED2_Pin);
+		HAL_Delay(100);*/
+		
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
+
+/*
+uint8_t W_Register (uint8_t addr, uint8_t cmd )
+{
+	uint8_t data_rec = 0;
+	data_rec = R_Register(&addr ,1);
+	make_command(data_rec ,PRIM_RX ,1);
+	
+	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
+	HAL_Delay(1);
+	HAL_SPI_TransmitReceive(&hspi1 ,addr ,nrf_receive , byte_to_read + 1 ,100);//(+1) due to include instructing command
+	HAL_Delay(1);	
+	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_SET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_RESET);
+	HAL_Delay(10);
+}
+
+void R_Register (uint8_t addr[], uint8_t byte_to_read ,uint8_t * readed_bytes)
+{
+	uint8_t rec[32]; // accumulate received bytes
+	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
+	HAL_Delay(1);
+	HAL_SPI_TransmitReceive(&hspi1 ,addr ,rec , byte_to_read + 1 ,100);//(+1) due to include instructing command
+	HAL_Delay(1);	
+	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_SET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_RESET);
+	HAL_Delay(10);
+}
+void make_command(uint8_t * REG, uint8_t cmd , uint8_t state)
+{
+	//clearing desired bit
+	uint8_t plate = 1;
+	plate <<= cmd;
+	plate =~ plate;
+	*REG &= plate;
+	
+	//writing desired bit
+	plate = state;
+	plate <<= cmd;
+	*REG |= plate;
+
+}
+*/
+
 
 /**
   * @brief System Clock Configuration
@@ -161,7 +227,6 @@ void SystemClock_Config(void)
   */
 static void MX_SPI1_Init(void)
 {
-
   /* USER CODE BEGIN SPI1_Init 0 */
 
   /* USER CODE END SPI1_Init 0 */
@@ -242,23 +307,23 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(Chip_Select_GPIO_Port, Chip_Select_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(Csel_GPIO_Port, CSel_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4|INT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(CN_GPIO_Port, CN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(TxRx_GPIO_Port, TxRx_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LED4_Pin|LED3_Pin|LED2_Pin|LED1_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Chip_Select_Pin */
-  GPIO_InitStruct.Pin = Chip_Select_Pin;
+   /*Configure GPIO pin : CSel_Pin */
+  GPIO_InitStruct.Pin = CSel_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(Chip_Select_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(Csel_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC4 INT_Pin */
   GPIO_InitStruct.Pin = GPIO_PIN_4|INT_Pin;
@@ -266,13 +331,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : CN_Pin */
-  GPIO_InitStruct.Pin = CN_Pin;
+	
+  /*Configure GPIO pin : CSel_Pin */
+  GPIO_InitStruct.Pin = TxRx_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(CN_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(TxRx_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED4_Pin LED3_Pin LED2_Pin LED1_Pin */
   GPIO_InitStruct.Pin = LED4_Pin|LED3_Pin|LED2_Pin|LED1_Pin;
