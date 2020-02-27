@@ -116,7 +116,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-		//CDC_Transmit_FS((uint8_t *)"This is a test.\n" ,16);
+		CDC_Transmit_FS((uint8_t *)"This is a test.\n" ,16);
 			HAL_Delay(1000);
 
 		HAL_GPIO_TogglePin(LED1_GPIO_Port ,LED1_Pin);

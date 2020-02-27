@@ -337,13 +337,11 @@ uint8_t TM_NRF24L01_ReadRegister(uint8_t reg) {
 	uint8_t tmp_received[50];  // a temporary buffer to get incomming data
 	uint8_t str [50];
 	NRF24L01_CSN_LOW;
-	//HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100);
+	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100);
 	HAL_SPI_TransmitReceive(&NRF24L01_SPI,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) , tmp_received, 1,100);
 	sprintf((char *)str, "%2X\n" ,tmp_received[0]);
 	CDC_Transmit_FS(str ,strlen((const char *)str));
 	HAL_SPI_Receive(&NRF24L01_SPI, &value, 1 ,100);
-	sprintf((char *)str, "%2X\n" ,value);
-	CDC_Transmit_FS(str ,strlen((const char *)str));
 	NRF24L01_CSN_HIGH;
 	return value;
 }
@@ -358,15 +356,9 @@ void TM_NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t* data, uint8_t count) {
 }
 
 void TM_NRF24L01_WriteRegister(uint8_t reg, uint8_t value) {
-	uint8_t tmp_received[50];  // a temporary buffer to get incomming data
-	uint8_t str [50];
 	NRF24L01_CSN_LOW;
   //TM_SPI_Send(NRF24L01_SPI, NRF24L01_WRITE_REGISTER_MASK(reg));
-	HAL_SPI_TransmitReceive(&NRF24L01_SPI, (uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg), tmp_received, 1,100);
-	//HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg) ,1 ,100);
-	sprintf((char *)str, "%2X\n" ,tmp_received[0]);
-	CDC_Transmit_FS(str ,strlen((const char *)str));
-	
+	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg) ,1 ,100);
 	//TM_SPI_Send(NRF24L01_SPI, value);
 	HAL_SPI_Transmit(&NRF24L01_SPI ,&value ,1 ,100);
 	NRF24L01_CSN_HIGH;
