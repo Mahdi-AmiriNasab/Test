@@ -333,43 +333,76 @@ uint8_t TM_NRF24L01_ReadBit(uint8_t reg, uint8_t bit) {
 }
 
 uint8_t TM_NRF24L01_ReadRegister(uint8_t reg) {
-	uint8_t value;
-	uint8_t tmp_received[50];  // a temporary buffer to get incomming data
-	uint8_t str [50];
+  uint8_t value;
 	NRF24L01_CSN_LOW;
+	#ifdef CDC_LOG
+	if(HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100) != HAL_OK)
+		CDC_Transmit_FS((uint8_t *)"Read command ERRORrd\n" ,21);
+	if(HAL_SPI_Receive(&NRF24L01_SPI, &value, 1 ,100)!= HAL_OK)
+		CDC_Transmit_FS((uint8_t *)"Read register ERRORwr0\n" ,23);31351
+	#else
 	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100);
-	HAL_SPI_TransmitReceive(&NRF24L01_SPI,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) , tmp_received, 1,100);
-	sprintf((char *)str, "%2X\n" ,tmp_received[0]);
-	CDC_Transmit_FS(str ,strlen((const char *)str));
+	HAL_Delay(10);
 	HAL_SPI_Receive(&NRF24L01_SPI, &value, 1 ,100);
+	HAL_Delay(10);
+	#endif
 	NRF24L01_CSN_HIGH;
 	return value;
 }
 
 void TM_NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t* data, uint8_t count) {
 	NRF24L01_CSN_LOW;
+	#ifdef CDC_LOG
 	//TM_SPI_Send(NRF24L01_SPI, NRF24L01_READ_REGISTER_MASK(reg));
-	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100);
+	if(HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100) != HAL_OK)
+		CDC_Transmit_FS((uint8_t *)"Read command ERRORrd\n" ,21);
 	//TM_SPI_ReadMulti(NRF24L01_SPI, data, NRF24L01_NOP_MASK, count);
+	if(HAL_SPI_Receive(&NRF24L01_SPI, data, count,100) != HAL_OK)
+		CDC_Transmit_FS((uint8_t *)"Read command ERRORrd\n" ,21);
+	#else
+	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100);
+	HAL_Delay(10);
 	HAL_SPI_Receive(&NRF24L01_SPI, data, count,100);
+	HAL_Delay(10);
+	#endif
 	NRF24L01_CSN_HIGH;
 }
 
 void TM_NRF24L01_WriteRegister(uint8_t reg, uint8_t value) {
 	NRF24L01_CSN_LOW;
+	#ifdef CDC_LOG
   //TM_SPI_Send(NRF24L01_SPI, NRF24L01_WRITE_REGISTER_MASK(reg));
-	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg) ,1 ,100);
+	if(HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg) ,1 ,100) != HAL_OK)
+		CDC_Transmit_FS((uint8_t *)"Write command ERRORwr1\n" ,23);
 	//TM_SPI_Send(NRF24L01_SPI, value);
+	if(HAL_SPI_Transmit(&NRF24L01_SPI ,&value ,1 ,100) != HAL_OK)
+		CDC_Transmit_FS((uint8_t *)"Write command ERRORwr2\n" ,23);
+	#else
+	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg) ,1 ,100);
+	HAL_Delay(10);
 	HAL_SPI_Transmit(&NRF24L01_SPI ,&value ,1 ,100);
+	HAL_Delay(10);
+	#endif
+	
 	NRF24L01_CSN_HIGH;
 }
 
 void TM_NRF24L01_WriteRegisterMulti(uint8_t reg, uint8_t *data, uint8_t count) {
 	NRF24L01_CSN_LOW;
+	#ifdef CDC_LOG
 	//TM_SPI_Send(NRF24L01_SPI, NRF24L01_WRITE_REGISTER_MASK(reg));
-	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg) ,1 ,100);
+	if(HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg) ,1 ,100) != HAL_OK)
+		CDC_Transmit_FS((uint8_t *)"Read command ERRORrd\n" ,21);
 	//TM_SPI_WriteMulti(NRF24L01_SPI, data, count);
+	if(HAL_SPI_Transmit(&NRF24L01_SPI ,data ,count ,100) != HAL_OK)
+		CDC_Transmit_FS((uint8_t *)"Read command ERRORrd\n" ,21);
+	
+	#else
+	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg) ,1 ,100);
+	HAL_Delay(10);
 	HAL_SPI_Transmit(&NRF24L01_SPI ,data ,count ,100);
+	HAL_Delay(10);
+	#endif
 	NRF24L01_CSN_HIGH;
 }
 

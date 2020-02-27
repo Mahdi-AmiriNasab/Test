@@ -78,7 +78,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-  
+ 
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -111,7 +111,7 @@ int main(void)
 	#define tranacting_number 2
 	const uint8_t address[6] = "00001";
 	
-	HAL_Delay(6000);
+	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
 	TM_NRF24L01_Init(72, 32);
   while (1)
   {
@@ -249,7 +249,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256; // minimum speed
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -314,7 +314,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(CSel_GPIO_Port, CSel_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(BLUE_PB_GPIO_Port, BLUE_PB_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4|INT_Pin, GPIO_PIN_RESET);
@@ -325,7 +325,14 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LED4_Pin|LED3_Pin|LED2_Pin|LED1_Pin, GPIO_PIN_RESET);
 
-   /*Configure GPIO pin : CSel_Pin */
+  	/*Configure GPIO pin : BLUE_PB_Pin */
+  GPIO_InitStruct.Pin = BLUE_PB_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(BLUE_PB_GPIO_Port, &GPIO_InitStruct);
+	
+	 /*Configure GPIO pin : CSel_Pin */
   GPIO_InitStruct.Pin = CSel_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
