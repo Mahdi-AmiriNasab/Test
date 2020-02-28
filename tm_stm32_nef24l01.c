@@ -339,7 +339,7 @@ uint8_t TM_NRF24L01_ReadRegister(uint8_t reg) {
 	if(HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100) != HAL_OK)
 		CDC_Transmit_FS((uint8_t *)"Read command ERRORrd\n" ,21);
 	if(HAL_SPI_Receive(&NRF24L01_SPI, &value, 1 ,100)!= HAL_OK)
-		CDC_Transmit_FS((uint8_t *)"Read register ERRORwr0\n" ,23);31351
+		CDC_Transmit_FS((uint8_t *)"Read register ERRORwr0\n" ,23);
 	#else
 	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100);
 	HAL_Delay(10);

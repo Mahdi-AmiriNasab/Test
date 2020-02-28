@@ -26,7 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "tm_stm32_nrf24l01.h"
-
+#define CDC_LOG
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -76,7 +76,7 @@ void R_Register (uint8_t addr[], uint8_t byte_to_read ,uint8_t * readed_bytes);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	
   /* USER CODE END 1 */
  
 
@@ -110,17 +110,48 @@ int main(void)
 	
 	#define tranacting_number 2
 	const uint8_t address[6] = "00001";
+	uint8_t nrf_status = 50, transmision_status  = 50; // not 0 , 01 , ff
 	
-	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
+	//while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
 	TM_NRF24L01_Init(72, 32);
+	TM_NRF24L01_SetRF(TM_NRF24L01_DataRate_250k, TM_NRF24L01_OutputPower_M6dBm);
+	TM_NRF24L01_SetMyAddress((uint8_t *)address);
+	TM_NRF24L01_SetTxAddress((uint8_t *)address);
+	
+	
   while (1)
   {
     /* USER CODE END WHILE */
-		CDC_Transmit_FS((uint8_t *)"This is a test.\n" ,16);
-			HAL_Delay(1000);
-
-		HAL_GPIO_TogglePin(LED1_GPIO_Port ,LED1_Pin);
 		
+		TM_NRF24L01_Transmit((uint8_t *)"Hello123456789ABCDEFGHIJKLMNOP01");
+		//HAL_Delay(10);
+		transmision_status = TM_NRF24L01_GetTransmissionStatus();
+		nrf_status = TM_NRF24L01_GetStatus();
+		
+		sprintf((char *)print_buffer, "\n\nSTATUS: 0x%02X \n\n", nrf_status);
+		CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
+		HAL_Delay(100);
+		
+		if(transmision_status == 0xff)
+		{
+			sprintf((char *)print_buffer, "Transmit Sending\n");
+			CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
+		}
+		HAL_Delay(100);
+		if(transmision_status == 0x00)
+		{
+			sprintf((char *)print_buffer, "Transmit LOST\n");
+			CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
+		}
+		HAL_Delay(100);		
+		if(transmision_status == 0x01)
+		{
+			sprintf((char *)print_buffer, "Transmit OK\n");
+			CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
+		}	
+		
+		HAL_GPIO_TogglePin(LED1_GPIO_Port ,LED1_Pin);
+		HAL_Delay(1000);
 		//TM_NRF24L01_SetTxAddress((uint8_t *)&address);
 		/*
 		HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
@@ -321,6 +352,9 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(TxRx_GPIO_Port, TxRx_Pin, GPIO_PIN_RESET);
+	
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(CSel_GPIO_Port, CSel_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LED4_Pin|LED3_Pin|LED2_Pin|LED1_Pin, GPIO_PIN_RESET);
@@ -346,7 +380,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 	
-  /*Configure GPIO pin : CSel_Pin */
+  /*Configure GPIO pin : TxRx_Pin */
   GPIO_InitStruct.Pin = TxRx_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
