@@ -26,6 +26,7 @@
 #include "tm_stm32_nrf24l01.h"
 #include "usbd_cdc_if.h"
 #include "stdio.h"
+#define 	SPI_DLY 	1
 
 
 /* NRF24L01+ registers*/
@@ -251,6 +252,8 @@ uint8_t TM_NRF24L01_Init(uint8_t channel, uint8_t payload_size) {
 	TM_NRF24L01_Struct.OutPwr = TM_NRF24L01_OutputPower_M6dBm; //chaned 0 to 6
 	TM_NRF24L01_Struct.DataRate = TM_NRF24L01_DataRate_250k;     //changed 2 to 250k
 	
+	HAL_Delay(50); // wait for a while to boot the device
+	
 	/* Reset nRF24L01+ to power on registers values */
 	TM_NRF24L01_SoftwareReset();
 	
@@ -265,11 +268,13 @@ uint8_t TM_NRF24L01_Init(uint8_t channel, uint8_t payload_size) {
 	TM_NRF24L01_WriteRegister(NRF24L01_REG_RX_PW_P4, TM_NRF24L01_Struct.PayloadSize);
 	TM_NRF24L01_WriteRegister(NRF24L01_REG_RX_PW_P5, TM_NRF24L01_Struct.PayloadSize);
 	
+	
 	/* Set RF settings (2mbps, output power)(data rate . output power) */
 	TM_NRF24L01_SetRF(TM_NRF24L01_Struct.DataRate, TM_NRF24L01_Struct.OutPwr);
 	
 	/* Config register */
-	TM_NRF24L01_WriteRegister(NRF24L01_REG_CONFIG, NRF24L01_CONFIG);
+	 // Reset NRF_CONFIG and enable 16-bit CRC.
+	TM_NRF24L01_WriteRegister(NRF24L01_REG_CONFIG,0x0C/* NRF24L01_CONFIG*/);
 	
 	/* Enable auto-acknowledgment for all pipes */
 	TM_NRF24L01_WriteRegister(NRF24L01_REG_EN_AA, 0x3F);
@@ -292,7 +297,7 @@ uint8_t TM_NRF24L01_Init(uint8_t channel, uint8_t payload_size) {
 	TM_NRF24L01_Clear_Interrupts();
 	
 	/* Go to RX mode */
-	TM_NRF24L01_PowerUpRx();
+	//TM_NRF24L01_PowerUpRx();
 	
 	/* Return OK */
 	return 1;
@@ -342,9 +347,9 @@ uint8_t TM_NRF24L01_ReadRegister(uint8_t reg) {
 		CDC_Transmit_FS((uint8_t *)"Read register ERRORwr0\n" ,23);
 	#else
 	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100);
-	HAL_Delay(10);
+	HAL_Delay(SPI_DLY);
 	HAL_SPI_Receive(&NRF24L01_SPI, &value, 1 ,100);
-	HAL_Delay(10);
+	HAL_Delay(SPI_DLY);
 	#endif
 	NRF24L01_CSN_HIGH;
 	return value;
@@ -361,9 +366,9 @@ void TM_NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t* data, uint8_t count) {
 		CDC_Transmit_FS((uint8_t *)"Read command ERRORrd\n" ,21);
 	#else
 	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_READ_REGISTER_MASK(reg) ,1 ,100);
-	HAL_Delay(10);
+	HAL_Delay(SPI_DLY);
 	HAL_SPI_Receive(&NRF24L01_SPI, data, count,100);
-	HAL_Delay(10);
+	HAL_Delay(SPI_DLY);
 	#endif
 	NRF24L01_CSN_HIGH;
 }
@@ -379,9 +384,9 @@ void TM_NRF24L01_WriteRegister(uint8_t reg, uint8_t value) {
 		CDC_Transmit_FS((uint8_t *)"Write command ERRORwr2\n" ,23);
 	#else
 	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_WRITE_REGISTER_MASK(reg) ,1 ,100);
-	HAL_Delay(10);
+	HAL_Delay(SPI_DLY);
 	HAL_SPI_Transmit(&NRF24L01_SPI ,&value ,1 ,100);
-	HAL_Delay(10);
+	HAL_Delay(SPI_DLY);
 	#endif
 	
 	NRF24L01_CSN_HIGH;

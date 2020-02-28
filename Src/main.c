@@ -109,26 +109,27 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	
 	#define tranacting_number 2
-	const uint8_t address[6] = "00001";
+	const uint8_t txaddress[6] = "00001";
+	const uint8_t rxaddress[6] = "00001";
 	uint8_t nrf_status = 50, transmision_status  = 50; // not 0 , 01 , ff
 	
 	//while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
 	TM_NRF24L01_Init(72, 32);
-	TM_NRF24L01_SetRF(TM_NRF24L01_DataRate_250k, TM_NRF24L01_OutputPower_M6dBm);
-	TM_NRF24L01_SetMyAddress((uint8_t *)address);
-	TM_NRF24L01_SetTxAddress((uint8_t *)address);
+	TM_NRF24L01_SetRF(TM_NRF24L01_DataRate_250k, TM_NRF24L01_OutputPower_M18dBm);
+	TM_NRF24L01_SetMyAddress((uint8_t *)rxaddress);
+	TM_NRF24L01_SetTxAddress((uint8_t *)txaddress);
 	
 	
   while (1)
   {
     /* USER CODE END WHILE */
 		
-		TM_NRF24L01_Transmit((uint8_t *)"Hello123456789ABCDEFGHIJKLMNOP01");
+		TM_NRF24L01_Transmit((uint8_t *)"Hello");
 		//HAL_Delay(10);
 		transmision_status = TM_NRF24L01_GetTransmissionStatus();
 		nrf_status = TM_NRF24L01_GetStatus();
 		
-		sprintf((char *)print_buffer, "\n\nSTATUS: 0x%02X \n\n", nrf_status);
+		sprintf((char *)print_buffer, "\nSTATUS: 0x%02X \n\n", nrf_status);
 		CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
 		HAL_Delay(100);
 		
@@ -136,21 +137,23 @@ int main(void)
 		{
 			sprintf((char *)print_buffer, "Transmit Sending\n");
 			CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
+			HAL_GPIO_TogglePin(LED2_GPIO_Port ,LED2_Pin);
 		}
 		HAL_Delay(100);
 		if(transmision_status == 0x00)
 		{
 			sprintf((char *)print_buffer, "Transmit LOST\n");
 			CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
+			HAL_GPIO_TogglePin(LED4_GPIO_Port ,LED4_Pin);
 		}
 		HAL_Delay(100);		
 		if(transmision_status == 0x01)
 		{
 			sprintf((char *)print_buffer, "Transmit OK\n");
 			CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
+			HAL_GPIO_TogglePin(LED3_GPIO_Port ,LED3_Pin);
 		}	
 		
-		HAL_GPIO_TogglePin(LED1_GPIO_Port ,LED1_Pin);
 		HAL_Delay(1000);
 		//TM_NRF24L01_SetTxAddress((uint8_t *)&address);
 		/*
