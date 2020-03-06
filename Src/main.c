@@ -416,7 +416,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = CSel_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(CSel_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC4 INT_Pin */
@@ -430,7 +430,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = TxRx_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(TxRx_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED4_Pin LED3_Pin LED2_Pin LED1_Pin */
