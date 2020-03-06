@@ -319,13 +319,13 @@ void TM_NRF24L01_GetData(uint8_t *data);
  * @param  channel: RF channel where device will operate
  * @retval None 
  */
-void TM_NRF24L01_SetChannel(uint8_t channel);
+uint8_t TM_NRF24L01_SetChannel(uint8_t channel);
 
 /**
  * @brief  Sets RF parameters for NRF24L01+
  * @param  DataRate: Data rate selection for NRF module. This parameter can be a value of @ref TM_NRF24L01_DataRate_t enumeration
  * @param  OutPwr: Output power selection for NRF module. This parameter can be a value of @ref TM_NRF24L01_OutputPower_t enumeration
- * @retval None
+ * @retval if channel number <= 125, HAL OK otherwise returns HAL_ERROR and default channel number is 1
  */
 void TM_NRF24L01_SetRF(TM_NRF24L01_DataRate_t DataRate, TM_NRF24L01_OutputPower_t OutPwr);
 

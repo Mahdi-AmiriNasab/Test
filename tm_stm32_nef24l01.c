@@ -250,15 +250,53 @@ uint8_t TM_NRF24L01_Init(uint8_t channel, uint8_t payload_size) {
 	TM_NRF24L01_Struct.Channel = !channel; /* Set channel to some different value for TM_NRF24L01_SetChannel() function to prevent rewrite the channel */
 	TM_NRF24L01_Struct.PayloadSize = payload_size;
 	TM_NRF24L01_Struct.OutPwr = TM_NRF24L01_OutputPower_M6dBm; //chaned 0 to 6
-	TM_NRF24L01_Struct.DataRate = TM_NRF24L01_DataRate_250k;     //changed 2 to 250k
+	TM_NRF24L01_Struct.DataRate = TM_NRF24L01_DataRate_1M;     //changed 250 to 1M
+	
+	NRF24L01_CE_LOW;
+	HAL_Delay(1);
+	NRF24L01_CSN_HIGH;
+	HAL_Delay(1);
 	
 	HAL_Delay(50); // wait for a while to boot the device
 	
 	/* Reset nRF24L01+ to power on registers values */
-	TM_NRF24L01_SoftwareReset();
+	//TM_NRF24L01_SoftwareReset();
+	
+	/* Config register */
+	 // Reset NRF_CONFIG and enable 16-bit CRC.
+	TM_NRF24L01_WriteRegister(NRF24L01_REG_CONFIG,0x0C/* NRF24L01_CONFIG*/);
+	
+	// Set 1500uS (minimum for 32B payload in ESB@250KBPS) timeouts, to make testing a little easier
+  // WARNING: If this is ever lowered, either 250KBS mode with AA is broken or maximum packet
+  // sizes must never be used. See documentation for a more complete explanation.
+	//write_register(SETUP_RETR,(delay&0xf)<<ARD | (count&0xf)<<ARC); added form the reference
+	TM_NRF24L01_WriteRegister(NRF24L01_REG_SETUP_RETR, 	0x5f);	
+	
+	/* Set RF settings (2mbps, output power)(data rate . output power) */
+	TM_NRF24L01_SetRF(TM_NRF24L01_Struct.DataRate, TM_NRF24L01_Struct.OutPwr);
+
+	/*According to the reference*/
+	// Disable dynamic payloads, to match dynamic_payloads_enabled setting - Reset value is 0
+	NRF24L01_CSN_LOW;
+	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)NRF24L01_ACTIVATE_MASK ,1 ,100);
+	HAL_Delay(1);
+	HAL_SPI_Transmit(&NRF24L01_SPI ,(uint8_t *)0x73 ,1 ,100);
+	HAL_Delay(1);
+	NRF24L01_CSN_HIGH;
+	TM_NRF24L01_WriteRegister(NRF24L01_REG_FEATURE, 0);
+	TM_NRF24L01_WriteRegister(NRF24L01_REG_DYNPD, 0); 
+	
+	/*According to the reference*/
+	// Reset current status
+  // Notice reset and flush is the last thing we do
+	TM_NRF24L01_WriteRegister(NRF24L01_REG_STATUS, 		NRF24L01_REG_DEFAULT_VAL_STATUS);
 	
 	/* Channel select */
 	TM_NRF24L01_SetChannel(channel);
+	
+	// Flush buffers
+	NRF24L01_FLUSH_TX;
+	NRF24L01_FLUSH_RX;
 	
 	/* Set pipeline to max possible 32 bytes */
 	TM_NRF24L01_WriteRegister(NRF24L01_REG_RX_PW_P0, TM_NRF24L01_Struct.PayloadSize); // Auto-ACK pipe
@@ -268,25 +306,17 @@ uint8_t TM_NRF24L01_Init(uint8_t channel, uint8_t payload_size) {
 	TM_NRF24L01_WriteRegister(NRF24L01_REG_RX_PW_P4, TM_NRF24L01_Struct.PayloadSize);
 	TM_NRF24L01_WriteRegister(NRF24L01_REG_RX_PW_P5, TM_NRF24L01_Struct.PayloadSize);
 	
-	
-	/* Set RF settings (2mbps, output power)(data rate . output power) */
-	TM_NRF24L01_SetRF(TM_NRF24L01_Struct.DataRate, TM_NRF24L01_Struct.OutPwr);
-	
-	/* Config register */
-	 // Reset NRF_CONFIG and enable 16-bit CRC.
-	TM_NRF24L01_WriteRegister(NRF24L01_REG_CONFIG,0x0C/* NRF24L01_CONFIG*/);
-	
 	/* Enable auto-acknowledgment for all pipes */
-	TM_NRF24L01_WriteRegister(NRF24L01_REG_EN_AA, 0x3F);
+	//TM_NRF24L01_WriteRegister(NRF24L01_REG_EN_AA, 0x3F);
 	
 	/* Enable RX addresses */
-	TM_NRF24L01_WriteRegister(NRF24L01_REG_EN_RXADDR, 0x3F);
+	//TM_NRF24L01_WriteRegister(NRF24L01_REG_EN_RXADDR, 0x3F);
 
 	/* Auto retransmit delay: 1000 (4x250) us and Up to 15 retransmit trials */
-	TM_NRF24L01_WriteRegister(NRF24L01_REG_SETUP_RETR, 0x4F);
+	//TM_NRF24L01_WriteRegister(NRF24L01_REG_SETUP_RETR, 0x4F);
 	
 	/* Dynamic length configurations: No dynamic length */
-	TM_NRF24L01_WriteRegister(NRF24L01_REG_DYNPD, (0 << NRF24L01_DPL_P0) | (0 << NRF24L01_DPL_P1) | (0 << NRF24L01_DPL_P2) | (0 << NRF24L01_DPL_P3) | (0 << NRF24L01_DPL_P4) | (0 << NRF24L01_DPL_P5));
+	//TM_NRF24L01_WriteRegister(NRF24L01_REG_DYNPD, (0 << NRF24L01_DPL_P0) | (0 << NRF24L01_DPL_P1) | (0 << NRF24L01_DPL_P2) | (0 << NRF24L01_DPL_P3) | (0 << NRF24L01_DPL_P4) | (0 << NRF24L01_DPL_P5));
 	
 	/* Clear FIFOs */
 	NRF24L01_FLUSH_TX;
@@ -294,10 +324,10 @@ uint8_t TM_NRF24L01_Init(uint8_t channel, uint8_t payload_size) {
 	
 	
 	/* Clear interrupts */
-	TM_NRF24L01_Clear_Interrupts();
+	//TM_NRF24L01_Clear_Interrupts();
 	
-	/* Go to RX mode */
-	//TM_NRF24L01_PowerUpRx();
+	/* Go to PTX mode */
+	TM_NRF24L01_PowerUpTx();
 	
 	/* Return OK */
 	return 1;
@@ -305,7 +335,7 @@ uint8_t TM_NRF24L01_Init(uint8_t channel, uint8_t payload_size) {
 
 void TM_NRF24L01_SetMyAddress(uint8_t *adr) {
 	NRF24L01_CE_LOW;
-	TM_NRF24L01_WriteRegisterMulti(NRF24L01_REG_RX_ADDR_P1, adr, 5);
+	TM_NRF24L01_WriteRegisterMulti(NRF24L01_REG_RX_ADDR_P0, adr, 5);
 	NRF24L01_CE_HIGH;
 }
 
@@ -459,6 +489,10 @@ void TM_NRF24L01_Transmit(uint8_t *data) {
 	
 	/* Send data! */
 	NRF24L01_CE_HIGH;
+	
+	HAL_Delay(100);
+	/* Leave the send pin	*/
+	NRF24L01_CE_LOW;
 }
 
 void TM_NRF24L01_GetData(uint8_t* data) {
@@ -577,12 +611,18 @@ uint8_t TM_NRF24L01_GetRetransmissionsCount(void) {
 	return TM_NRF24L01_ReadRegister(NRF24L01_REG_OBSERVE_TX) & 0x0F;
 }
 
-void TM_NRF24L01_SetChannel(uint8_t channel) {
+uint8_t TM_NRF24L01_SetChannel(uint8_t channel) {
 	if (channel <= 125 && channel != TM_NRF24L01_Struct.Channel) {
 		/* Store new channel setting */
 		TM_NRF24L01_Struct.Channel = channel;
 		/* Write channel */
 		TM_NRF24L01_WriteRegister(NRF24L01_REG_RF_CH, channel);
+		return HAL_OK;
+	}
+	else
+	{
+		TM_NRF24L01_WriteRegister(NRF24L01_REG_RF_CH, 1);
+		return HAL_ERROR;
 	}
 }
 

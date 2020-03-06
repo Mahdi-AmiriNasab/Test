@@ -26,7 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "tm_stm32_nrf24l01.h"
-#define CDC_LOG
+//#define CDC_LOG
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -109,8 +109,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	
 	#define tranacting_number 2
-	const uint8_t txaddress[6] = "00001";
-	const uint8_t rxaddress[6] = "00001";
+	const uint8_t txaddress[6] = "00000";
+	const uint8_t rxaddress[6] = "00000";
 	uint8_t nrf_status = 50, transmision_status  = 50; // not 0 , 01 , ff
 	
 	//while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
