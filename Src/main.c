@@ -26,6 +26,8 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "tm_stm32_nrf24l01.h"
+#include <a_nRF24L01.h>
+#include <a_RF24.h>
 //#define CDC_LOG
 /* USER CODE END Includes */
 
@@ -128,7 +130,7 @@ int main(void)
 	CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
 	
 	nrf_status  = TM_NRF24L01_ReadRegister(NRF24L01_REG_SETUP_RETR);
-	sprintf((char *)print_buffer, "SetupReg: 0x%02X \n", nrf_status);
+	sprintf((char *)print_buffer, "SetupRETR Reg: 0x%02X \n", nrf_status);
 	CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
 	
 	nrf_status  = TM_NRF24L01_ReadRegister(NRF24L01_REG_RF_SETUP);
@@ -139,6 +141,7 @@ int main(void)
 	sprintf((char *)print_buffer, "ChannelReg: 0x%02X \n", nrf_status);
 	CDC_Transmit_FS(print_buffer, strlen((char *)print_buffer));
 	
+	dcsd
 	
   while (1)
   {
