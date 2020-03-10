@@ -16,6 +16,8 @@
 #define __RF24_H__
 
 #include "a_RF24_config.h"
+#include "string.h"
+#include "stdio.h"
 
 #if defined (RF24_LINUX) || defined (LITTLEWIRE)
   #include "utility/includes.h"

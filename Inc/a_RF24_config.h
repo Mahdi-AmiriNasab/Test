@@ -28,8 +28,20 @@
 /**********************/
 #define rf24_max(a,b) (a>b?a:b)
 #define rf24_min(a,b) (a<b?a:b)
+#define pgm_read_byte(addr) (*(const uint8_t *)(addr))
 #define _BV(x) (1<<(x))
-#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+
+#if defined (CDC_LOG)
+#include "usbd_cdc_if.h"
+#endif
+#if defined (USE_HAL_DRIVER)
+#define	 millis() 			HAL_GetTick()
+#define  HIGH 					1
+#define  LOW						0
+#define  delayMicroseconds(delay)			if(delay/100)HAL_Delay(delay/100);else HAL_Delay(1)
+#define  delay(ms) 			HAL_Delay(ms)
+#endif
+
 #if defined (SPI_HAS_TRANSACTION) && !defined (SPI_UART) && !defined (SOFTSPI)
   #define RF24_SPI_TRANSACTIONS
 #endif // defined (SPI_HAS_TRANSACTION) && !defined (SPI_UART) && !defined (SOFTSPI)
@@ -191,5 +203,6 @@
 #define NRF24L01_IRQ_DATA_READY     0x40 /*!< Data ready for receive */
 #define NRF24L01_IRQ_TRAN_OK        0x20 /*!< Transmission went OK */
 #define NRF24L01_IRQ_MAX_RT         0x10 /*!< Max retransmissions reached, last transmission failed */
+#endif
 #endif
 #endif // __RF24_CONFIG_H__

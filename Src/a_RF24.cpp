@@ -873,7 +873,7 @@ void RF24::stopListening(void)
 	powerUp();
   }
   #endif
-  write_register(EN_RXADDR,read_register(EN_RXADDR) | _BV(pgm_read_byte(&child_pipe_enable[0]))); // Enable RX on pipe0
+  write_register(EN_RXADDR,read_register(EN_RXADDR) | _BV(ERX_P0)); // Enable RX on pipe0
   
   //delayMicroseconds(100);
 
@@ -932,9 +932,6 @@ bool RF24::write( const void* buf, uint8_t len, const bool multicast )
 
 	//Wait until complete or failed
 	#if defined (FAILURE_HANDLING) || defined (RF24_LINUX)
-	#if defined (USE_HAL_DRIVER)
-	uint32_t timer = HAL_GetTick();
-	#else
 		uint32_t timer = millis();
 	#endif 
 	
@@ -989,15 +986,27 @@ bool RF24::writeBlocking( const void* buf, uint8_t len, uint32_t timeout )
 
 		if( get_status() & _BV(MAX_RT)){					  //If MAX Retries have been reached
 			reUseTX();										  //Set re-transmit and clear the MAX_RT interrupt flag
-			if(millis() - timer > timeout){ return 0; }		  //If this payload has exceeded the user-defined timeout, exit and return 0
+			#if defined (USE_HAL_DRIVER)
+			if(HAL_GetTick() - timer > timeout){ return 0; }		  //If this payload has exceeded the user-defined timeout, exit and return 0	
+			#else
+			if(millis() - timer > timeout){ return 0; }		  //If this payload has exceeded the user-defined timeout, exit and return 0	
+			#endif
 		}
-		#if defined (FAILURE_HANDLING) || defined (RF24_LINUX)
+		#if (defined (FAILURE_HANDLING) || defined (RF24_LINUX)) & !defined (USE_HAL_DRIVER)
 			if(millis() - timer > (timeout+95) ){			
 				errNotify();
 				#if defined (FAILURE_HANDLING)
 				return 0;			
                 #endif				
 			}
+		#elif defined (USE_HAL_DRIVER)
+			if(HAL_GetTick() - timer > (timeout+95) ){			
+				errNotify();
+				#if defined (FAILURE_HANDLING)
+				return 0;			
+                #endif				
+			}
+		
 		#endif
 
   	}
@@ -1013,8 +1022,10 @@ bool RF24::writeBlocking( const void* buf, uint8_t len, uint32_t timeout )
 void RF24::reUseTX(){
 		write_register(NRF_STATUS,_BV(MAX_RT) );			  //Clear max retry flag
 		spiTrans( REUSE_TX_PL );
-		ce(LOW);										  //Re-Transfer packet
-		ce(HIGH);
+	NRF24L01_CE_LOW;										  //Re-Transfer packet
+	HAL_Delay(1);
+	NRF24L01_CE_HIGH;
+	HAL_Delay(1);
 }
 
 /****************************************************************************/
@@ -1026,8 +1037,10 @@ bool RF24::writeFast( const void* buf, uint8_t len, const bool multicast )
 	//Return 0 so the user can control the retrys and set a timer or failure counter if required
 	//The radio will auto-clear everything in the FIFO as long as CE remains high
 
-	#if defined (FAILURE_HANDLING) || defined (RF24_LINUX)
+	#if (defined (FAILURE_HANDLING) || defined (RF24_LINUX)) && !defined (USE_HAL_DRIVER)
 		uint32_t timer = millis();
+	#elif defined (USE_HAL_DRIVER)
+		uint32_t timer = HAL_GetTick();
 	#endif
 	
 	while( ( get_status()  & ( _BV(TX_FULL) ))) {			  //Blocking only if FIFO is full. This will loop and block until TX is successful or fail
@@ -1186,13 +1199,21 @@ uint8_t RF24::getDynamicPayloadSize(void)
   _SPI.transfernb( (char *) spi_txbuff, (char *) spi_rxbuff, 2);
   result = spi_rxbuff[1];  
   endTransaction();
-  #else
+  #elif (ARDUINO)
   beginTransaction();
   _SPI.transfer( R_RX_PL_WID );
   result = _SPI.transfer(0xff);
   endTransaction();
-  #endif
-
+	
+  #elif defined (USE_HAL_DRIVER)
+	NRF24L01_CSN_LOW;
+	HAL_Delay(1);
+	HAL_SPI_Transmit(&NRF24L01_SPI, (uint8_t *)R_RX_PL_WID, 1, 100); 
+	HAL_Delay(1);
+	HAL_SPI_Receive(&NRF24L01_SPI, (uint8_t *)result, 1, 100);		
+	HAL_Delay(1);
+	NRF24L01_CSN_HIGH;
+	#endif
   if(result > 32) { flush_rx(); delay(2); return 0; }
   return result;
 }
@@ -1281,11 +1302,11 @@ void RF24::openWritingPipe(const uint8_t *address)
 }
 
 /****************************************************************************/
-static const uint8_t child_pipe[] PROGMEM =
+static const uint8_t child_pipe[] =
 {
   RX_ADDR_P0, RX_ADDR_P1, RX_ADDR_P2, RX_ADDR_P3, RX_ADDR_P4, RX_ADDR_P5
 };
-static const uint8_t child_payload_size[] PROGMEM =
+static const uint8_t child_payload_size[] =
 {
   RX_PW_P0, RX_PW_P1, RX_PW_P2, RX_PW_P3, RX_PW_P4, RX_PW_P5
 };
@@ -1313,7 +1334,7 @@ void RF24::openReadingPipe(uint8_t child, uint64_t address)
     // Note it would be more efficient to set all of the bits for all open
     // pipes at once.  However, I thought it would make the calling code
     // more simple to do it this way.
-    write_register(EN_RXADDR,read_register(EN_RXADDR) | _BV(pgm_read_byte(&child_pipe_enable[child])));
+    write_register(EN_RXADDR,read_register(EN_RXADDR) | _BV(child));
   }
 }
 
@@ -1353,7 +1374,7 @@ void RF24::openReadingPipe(uint8_t child, const uint8_t *address)
     // Note it would be more efficient to set all of the bits for all open
     // pipes at once.  However, I thought it would make the calling code
     // more simple to do it this way.
-    write_register(EN_RXADDR,read_register(EN_RXADDR) | _BV(pgm_read_byte(&child_pipe_enable[child])));
+    write_register(EN_RXADDR,read_register(EN_RXADDR) | _BV(pgm_read_byte(child)));
 
   }
 }
@@ -1362,17 +1383,28 @@ void RF24::openReadingPipe(uint8_t child, const uint8_t *address)
 
 void RF24::closeReadingPipe( uint8_t pipe )
 {
-  write_register(EN_RXADDR,read_register(EN_RXADDR) & ~_BV(pgm_read_byte(&child_pipe_enable[pipe])));
+  write_register(EN_RXADDR,read_register(EN_RXADDR) & ~_BV(pipe));
 }
 
 /****************************************************************************/
 
 void RF24::toggle_features(void)
 {
+	#if defined (ARDUINO)
     beginTransaction();
 	_SPI.transfer( ACTIVATE );
     _SPI.transfer( 0x73 );
 	endTransaction();
+	
+	#elif defined (USE_HAL_DRIVER)
+	NRF24L01_CSN_LOW;
+	HAL_Delay(1);
+  HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *) ACTIVATE, 1, 100); 
+	HAL_Delay(1);
+	HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *) 0x73, 1, 100);	
+	HAL_Delay(1);
+	NRF24L01_CSN_HIGH;
+	#endif
 }
 
 /****************************************************************************/
@@ -1384,9 +1416,13 @@ void RF24::enableDynamicPayloads(void)
     //toggle_features();
     write_register(FEATURE,read_register(FEATURE) | _BV(EN_DPL) );
 
-
+	#if CDC_LOG
+	uint8_t bf[100];
+	sprintf((char *)bf,"FEATURE=%i\r\n",read_register(FEATURE));
+	CDC_Transmit_FS(bf, strlen((char *)bf));
+	#elif defined (SERIAL_DEBUG)
   IF_SERIAL_DEBUG(printf("FEATURE=%i\r\n",read_register(FEATURE)));
-
+	#endif
   // Enable dynamic payload on all pipes
   //
   // Not sure the use case of only having dynamic payload on certain
@@ -1404,9 +1440,13 @@ void RF24::disableDynamicPayloads(void)
   //toggle_features();
   write_register(FEATURE, 0);
 
-
+	#if CDC_LOG
+	uint8_t bf[100];
+	sprintf((char *)bf,"FEATURE=%i\r\n",read_register(FEATURE));
+	CDC_Transmit_FS(bf, strlen((char *)bf));
+	#elif defined (SERIAL_DEBUG)
   IF_SERIAL_DEBUG(printf("FEATURE=%i\r\n",read_register(FEATURE)));
-
+  #endif
   // Disable dynamic payload on all pipes
   //
   // Not sure the use case of only having dynamic payload on certain
@@ -1427,8 +1467,13 @@ void RF24::enableAckPayload(void)
     //toggle_features();
     write_register(FEATURE,read_register(FEATURE) | _BV(EN_ACK_PAY) | _BV(EN_DPL) );
 
+	#if CDC_LOG
+	uint8_t bf[100];
+	sprintf((char *)bf,"FEATURE=%i\r\n",read_register(FEATURE));
+	CDC_Transmit_FS(bf, strlen((char *)bf));
+	#elif defined (SERIAL_DEBUG)
   IF_SERIAL_DEBUG(printf("FEATURE=%i\r\n",read_register(FEATURE)));
-
+	#endif
   //
   // Enable dynamic payload on pipes 0 & 1
   //
@@ -1446,8 +1491,13 @@ void RF24::enableDynamicAck(void){
     //toggle_features();
     write_register(FEATURE,read_register(FEATURE) | _BV(EN_DYN_ACK) );
 
+  #if CDC_LOG
+	uint8_t bf[100];
+	sprintf((char *)bf,"FEATURE=%i\r\n",read_register(FEATURE));
+	CDC_Transmit_FS(bf, strlen((char *)bf));
+	#elif defined (SERIAL_DEBUG)
   IF_SERIAL_DEBUG(printf("FEATURE=%i\r\n",read_register(FEATURE)));
-
+	#endif
 
 }
 
@@ -1470,7 +1520,7 @@ void RF24::writeAckPayload(uint8_t pipe, const void* buf, uint8_t len)
 	
     _SPI.transfern( (char *) spi_txbuff, size);
 	endTransaction();
-  #else
+  #elif (ARDUINO)
   beginTransaction();
   _SPI.transfer(W_ACK_PAYLOAD | ( pipe & 0x07 ) );
 
@@ -1478,7 +1528,15 @@ void RF24::writeAckPayload(uint8_t pipe, const void* buf, uint8_t len)
     _SPI.transfer(*current++);
   endTransaction();
   	
-  #endif  
+  #elif defined (USE_HAL_DRIVER)
+	NRF24L01_CSN_LOW;
+	HAL_Delay(1);
+  HAL_SPI_Transmit(&NRF24L01_SPI, (uint8_t *)(W_ACK_PAYLOAD | ( pipe & 0x07 )), 1, 100); 
+	HAL_Delay(1);
+	HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *) current, data_len, 100);	
+	HAL_Delay(1);
+	NRF24L01_CSN_HIGH;
+	#endif 
 
 }
 
