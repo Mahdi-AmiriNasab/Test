@@ -192,7 +192,7 @@ uint8_t RF24::read_register(uint8_t reg)
 	HAL_Delay(1);
 	HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *) ( R_REGISTER | ( REGISTER_MASK & reg )), 1, 100); 
 	HAL_Delay(1);
-	HAL_SPI_Receive(&NRF24L01_SPI,(uint8_t *) result, 1, 1000);		
+	HAL_SPI_Receive(&NRF24L01_SPI,(uint8_t *)&result, 1, 1000);		
 	HAL_Delay(1);
 	NRF24L01_CSN_HIGH;
 	#endif
@@ -273,9 +273,9 @@ uint8_t RF24::write_register(uint8_t reg, uint8_t value)
   #elif defined (USE_HAL_DRIVER)
 	NRF24L01_CSN_LOW;
 	HAL_Delay(1);
-	status = HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *) ( W_REGISTER | ( REGISTER_MASK & reg )), 1, 100); 
+	status = HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *) ( W_REGISTER | ( REGISTER_MASK & reg )), 1, 100); //FIX THE ST
 	HAL_Delay(1);
-	HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *)value , 1, 1000);		
+	HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *)&value , 1, 1000);		
 	HAL_Delay(1);
 	NRF24L01_CSN_HIGH;
 	#endif
@@ -332,7 +332,7 @@ uint8_t RF24::write_payload(const void* buf, uint8_t data_len, const uint8_t wri
 	#elif defined (USE_HAL_DRIVER)
 	NRF24L01_CSN_LOW;
 	HAL_Delay(1);
-	status = HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *)writeType, 1, 100); 
+	status = HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *)&writeType, 1, 100); 
 	HAL_Delay(1);
 	HAL_SPI_Transmit(&NRF24L01_SPI,(uint8_t *)current , data_len, 1000);		
 	HAL_Delay(1);
@@ -436,7 +436,7 @@ uint8_t RF24::spiTrans(uint8_t cmd){
 	#if defined (USE_HAL_DRIVER)
 	NRF24L01_CSN_LOW;
 	HAL_Delay(1);
-	status = HAL_SPI_Transmit(&NRF24L01_SPI, (uint8_t *)cmd, 1, 100); 
+	HAL_SPI_TransmitReceive(&NRF24L01_SPI, (uint8_t *)&cmd ,(uint8_t *)&status, 1, 100); 
 	HAL_Delay(1);
 	NRF24L01_CSN_HIGH;
 	#else
@@ -456,7 +456,7 @@ uint8_t RF24::get_status(void)
 }
 
 /****************************************************************************/
-#if !defined (MINIMAL) & !(USE_HAL_DRIVER)
+#if !defined (MINIMAL) & !defined(USE_HAL_DRIVER)
 void RF24::print_status(uint8_t status)
 {
   printf_P(PSTR("STATUS\t\t = 0x%02x RX_DR=%x TX_DS=%x MAX_RT=%x RX_P_NO=%x TX_FULL=%x\r\n"),
@@ -1210,7 +1210,7 @@ uint8_t RF24::getDynamicPayloadSize(void)
 	HAL_Delay(1);
 	HAL_SPI_Transmit(&NRF24L01_SPI, (uint8_t *)R_RX_PL_WID, 1, 100); 
 	HAL_Delay(1);
-	HAL_SPI_Receive(&NRF24L01_SPI, (uint8_t *)result, 1, 100);		
+	HAL_SPI_Receive(&NRF24L01_SPI, (uint8_t *)&result, 1, 100);		
 	HAL_Delay(1);
 	NRF24L01_CSN_HIGH;
 	#endif
@@ -1368,7 +1368,7 @@ void RF24::openReadingPipe(uint8_t child, const uint8_t *address)
       write_register(pgm_read_byte(&child_pipe[child]), address, addr_width);
     }else{
       write_register(pgm_read_byte(&child_pipe[child]), address, 1);
-	}
+		}
     write_register(pgm_read_byte(&child_payload_size[child]),payload_size);
 
     // Note it would be more efficient to set all of the bits for all open
