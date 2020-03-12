@@ -123,6 +123,7 @@ int main(void)
 	radio.setDataRate(RF24_2MBPS);
 	radio.openWritingPipe(txaddress);
 	radio.setPALevel(RF24_PA_MIN);
+  radio.setChannel(10);
 	radio.stopListening();
 	const char text[] = "Hello\nThis is a test";
 	while (1)
