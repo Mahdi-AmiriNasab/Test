@@ -66,15 +66,17 @@ void Error_Handler(void);
 #define INT_GPIO_Port GPIOC
 #define TxRx_Pin GPIO_PIN_0			// CE pin
 #define TxRx_GPIO_Port GPIOB
-#define LED4_Pin GPIO_PIN_12
-#define LED4_GPIO_Port GPIOD
-#define LED3_Pin GPIO_PIN_13
-#define LED3_GPIO_Port GPIOD
-#define LED2_Pin GPIO_PIN_14
-#define LED2_GPIO_Port GPIOD
-#define LED1_Pin GPIO_PIN_15
-#define LED1_GPIO_Port GPIOD
+#define LED_GREENPin GPIO_PIN_12
+#define LED_GREEN_GPIO_Port GPIOD
+#define LED_ORANGE_Pin GPIO_PIN_13
+#define LED_ORANGE_GPIO_Port GPIOD
+#define LED_RED_Pin GPIO_PIN_14
+#define LED_RED_GPIO_Port GPIOD
+#define LED_BLUE_Pin GPIO_PIN_15
+#define LED_BLUE_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */
+
+
 
 /* USER CODE END Private defines */
 
