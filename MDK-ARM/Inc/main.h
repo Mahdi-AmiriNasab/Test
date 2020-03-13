@@ -66,7 +66,7 @@ void Error_Handler(void);
 #define INT_GPIO_Port GPIOC
 #define TxRx_Pin GPIO_PIN_0			// CE pin
 #define TxRx_GPIO_Port GPIOB
-#define LED_GREENPin GPIO_PIN_12
+#define LED_GREEN_Pin GPIO_PIN_12
 #define LED_GREEN_GPIO_Port GPIOD
 #define LED_ORANGE_Pin GPIO_PIN_13
 #define LED_ORANGE_GPIO_Port GPIOD
@@ -75,7 +75,7 @@ void Error_Handler(void);
 #define LED_BLUE_Pin GPIO_PIN_15
 #define LED_BLUE_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */
-
+#define CPU_Freq_MHZ 16
 
 
 /* USER CODE END Private defines */

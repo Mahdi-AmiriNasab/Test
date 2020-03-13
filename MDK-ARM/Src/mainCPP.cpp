@@ -28,6 +28,8 @@
 #include "tm_stm32_nrf24l01.h"
 #include <a_nRF24L01.h>
 #include "a_RF24.h"
+#include "stdio.h"
+
 //#define CDC_LOG
 /* USER CODE END Includes */
 
@@ -53,7 +55,7 @@ UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
 uint8_t print_buffer[100] ,nrf_receive [100];
-const uint8_t tx_address[6] = "00001";
+//const uint8_t tx_address[6] = "00001";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -113,26 +115,38 @@ int main(void)
 	
 	#define tranacting_number 2
 	const uint8_t txaddress[6] = "00001";
-	const uint8_t rxaddress[6] = "00001";
-	uint8_t nrf_status = 50, transmision_status  = 50; // not 0 , 01 , ff
-	uint8_t flag = 1;
+	//	const uint8_t rxaddress[6] = "00001";
+	//uint8_t nrf_status = 50, transmision_status  = 50; // not 0 , 01 , ff
+	//uint8_t flag = 1;
 	
 	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
 	RF24 radio(NRF24L01_CE_PIN, NRF24L01_CSN_PIN);
 	radio.begin();
-	radio.setDataRate(RF24_2MBPS);
 	radio.openWritingPipe(txaddress);
 	radio.setPALevel(RF24_PA_MIN);
+	radio.setDataRate(RF24_2MBPS);
   radio.setChannel(10);
 	radio.stopListening();
 	const char text[] = "Hello\nThis is a test";
+	
+	sprintf( (char  *)print_buffer, (const char *)"channel number = 0x%02x" ,radio.getChannel());
+	CDC_Transmit_FS(print_buffer, sizeof(print_buffer));
+	
+	sprintf( (char  *)print_buffer, (const char *)"DataRate = 0x%02x" ,radio.getDataRate());
+	CDC_Transmit_FS(print_buffer, sizeof(print_buffer));
+	
+	sprintf( (char  *)print_buffer, (const char *)"STATUS = 0x%02x" ,radio.get_status());
+	CDC_Transmit_FS(print_buffer, sizeof(print_buffer));
+	
+	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
+
 	while (1)
   {
 		radio.write(&text, sizeof(text));
 		HAL_Delay(500);
-		HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREENPin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
 		HAL_Delay(500);
-    HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREENPin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
 		/* USER CODE END WHILE */
 		/* USER CODE BEGIN 3 */
 		
@@ -140,52 +154,6 @@ int main(void)
 	/* USER CODE END 3 */
 }
 
-/*
-uint8_t W_Register (uint8_t addr, uint8_t cmd )
-{
-	uint8_t data_rec = 0;
-	data_rec = R_Register(&addr ,1);
-	make_command(data_rec ,PRIM_RX ,1);
-	
-	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
-	HAL_Delay(1);
-	HAL_SPI_TransmitReceive(&hspi1 ,addr ,nrf_receive , byte_to_read + 1 ,100);//(+1) due to include instructing command
-	HAL_Delay(1);	
-	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_SET);
-	HAL_Delay(10);
-	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_RESET);
-	HAL_Delay(10);
-}
-
-void R_Register (uint8_t addr[], uint8_t byte_to_read ,uint8_t * readed_bytes)
-{
-	uint8_t rec[32]; // accumulate received bytes
-	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
-	HAL_Delay(1);
-	HAL_SPI_TransmitReceive(&hspi1 ,addr ,rec , byte_to_read + 1 ,100);//(+1) due to include instructing command
-	HAL_Delay(1);	
-	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_SET);
-	HAL_Delay(10);
-	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_RESET);
-	HAL_Delay(10);
-}
-void make_command(uint8_t * REG, uint8_t cmd , uint8_t state)
-{
-	//clearing desired bit
-	uint8_t plate = 1;
-	plate <<= cmd;
-	plate =~ plate;
-	*REG &= plate;
-	
-	//writing desired bit
-	plate = state;
-	plate <<= cmd;
-	*REG |= plate;
-
-}
-*/
 
 
 /**
@@ -209,7 +177,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 96;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV6;
   RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -221,8 +189,8 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
@@ -317,32 +285,28 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BLUE_PB_GPIO_Port, BLUE_PB_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(CSel_GPIO_Port, CSel_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4|INT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(TxRx_GPIO_Port, TxRx_Pin, GPIO_PIN_RESET);
-	
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(CSel_GPIO_Port, CSel_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, LED_BLUE_Pin|LED_GREENPin|LED_ORANGE_Pin|LED_RED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin|LED_ORANGE_Pin|LED_RED_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
 
-  	/*Configure GPIO pin : BLUE_PB_Pin */
+  /*Configure GPIO pin : BLUE_PB_Pin */
   GPIO_InitStruct.Pin = BLUE_PB_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BLUE_PB_GPIO_Port, &GPIO_InitStruct);
-	
-	 /*Configure GPIO pin : CSel_Pin */
+
+  /*Configure GPIO pin : CSel_Pin */
   GPIO_InitStruct.Pin = CSel_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CSel_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC4 INT_Pin */
@@ -351,21 +315,21 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-	
+
   /*Configure GPIO pin : TxRx_Pin */
   GPIO_InitStruct.Pin = TxRx_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(TxRx_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED_BLUE_Pin|LED_GREENPin|LED_ORANGE_Pin|LED_RED_Pin */
-  GPIO_InitStruct.Pin = LED_BLUE_Pin|LED_GREENPin|LED_ORANGE_Pin|LED_RED_Pin;
+  /*Configure GPIO pins : LED_GREEN_Pin LED_ORANGE_Pin LED_RED_Pin LED_BLUE_Pin */
+  GPIO_InitStruct.Pin = LED_GREEN_Pin|LED_ORANGE_Pin|LED_RED_Pin|LED_BLUE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
+	
 }
 
 /* USER CODE BEGIN 4 */
@@ -380,8 +344,14 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-
-  /* USER CODE END Error_Handler_Debug */
+	while(1)
+	{
+		HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+		HAL_Delay(500);
+		HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+		HAL_Delay(500);
+	}
+	/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
