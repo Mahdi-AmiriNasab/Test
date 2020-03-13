@@ -28,6 +28,8 @@
 #include "tm_stm32_nrf24l01.h"
 #include <a_nRF24L01.h>
 #include "a_RF24.h"
+#include "stdio.h"
+
 //#define CDC_LOG
 /* USER CODE END Includes */
 
@@ -53,7 +55,7 @@ UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
 uint8_t print_buffer[100] ,nrf_receive [100];
-const uint8_t tx_address[6] = "00001";
+//const uint8_t tx_address[6] = "00001";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -113,9 +115,9 @@ int main(void)
 	
 	#define tranacting_number 2
 	const uint8_t txaddress[6] = "00001";
-	const uint8_t rxaddress[6] = "00001";
-	uint8_t nrf_status = 50, transmision_status  = 50; // not 0 , 01 , ff
-	uint8_t flag = 1;
+	//	const uint8_t rxaddress[6] = "00001";
+	//uint8_t nrf_status = 50, transmision_status  = 50; // not 0 , 01 , ff
+	//uint8_t flag = 1;
 	
 	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
 	RF24 radio(NRF24L01_CE_PIN, NRF24L01_CSN_PIN);
@@ -126,6 +128,18 @@ int main(void)
   radio.setChannel(10);
 	radio.stopListening();
 	const char text[] = "Hello\nThis is a test";
+	
+	sprintf( (char  *)print_buffer, (const char *)"channel number = 0x%02x" ,radio.getChannel());
+	CDC_Transmit_FS(print_buffer, sizeof(print_buffer));
+	
+	sprintf( (char  *)print_buffer, (const char *)"DataRate = 0x%02x" ,radio.getDataRate());
+	CDC_Transmit_FS(print_buffer, sizeof(print_buffer));
+	
+	sprintf( (char  *)print_buffer, (const char *)"STATUS = 0x%02x" ,radio.get_status());
+	CDC_Transmit_FS(print_buffer, sizeof(print_buffer));
+	
+	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
+
 	while (1)
   {
 		radio.write(&text, sizeof(text));
@@ -140,52 +154,6 @@ int main(void)
 	/* USER CODE END 3 */
 }
 
-/*
-uint8_t W_Register (uint8_t addr, uint8_t cmd )
-{
-	uint8_t data_rec = 0;
-	data_rec = R_Register(&addr ,1);
-	make_command(data_rec ,PRIM_RX ,1);
-	
-	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
-	HAL_Delay(1);
-	HAL_SPI_TransmitReceive(&hspi1 ,addr ,nrf_receive , byte_to_read + 1 ,100);//(+1) due to include instructing command
-	HAL_Delay(1);	
-	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_SET);
-	HAL_Delay(10);
-	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_RESET);
-	HAL_Delay(10);
-}
-
-void R_Register (uint8_t addr[], uint8_t byte_to_read ,uint8_t * readed_bytes)
-{
-	uint8_t rec[32]; // accumulate received bytes
-	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_RESET);
-	HAL_Delay(1);
-	HAL_SPI_TransmitReceive(&hspi1 ,addr ,rec , byte_to_read + 1 ,100);//(+1) due to include instructing command
-	HAL_Delay(1);	
-	HAL_GPIO_WritePin(Chip_Select_GPIO_Port ,Chip_Select_Pin ,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_SET);
-	HAL_Delay(10);
-	HAL_GPIO_WritePin(LED3_GPIO_Port ,LED3_Pin ,GPIO_PIN_RESET);
-	HAL_Delay(10);
-}
-void make_command(uint8_t * REG, uint8_t cmd , uint8_t state)
-{
-	//clearing desired bit
-	uint8_t plate = 1;
-	plate <<= cmd;
-	plate =~ plate;
-	*REG &= plate;
-	
-	//writing desired bit
-	plate = state;
-	plate <<= cmd;
-	*REG |= plate;
-
-}
-*/
 
 
 /**
@@ -376,8 +344,14 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-
-  /* USER CODE END Error_Handler_Debug */
+	while(1)
+	{
+		HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+		HAL_Delay(500);
+		HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+		HAL_Delay(500);
+	}
+	/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT

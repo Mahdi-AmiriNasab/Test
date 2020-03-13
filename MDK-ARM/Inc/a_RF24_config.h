@@ -19,7 +19,7 @@
 #define __RF24_CONFIG_H__
 
 /*** USER DEFINES:  ***/  
-#define FAILURE_HANDLING
+//#define FAILURE_HANDLING
 //#define SERIAL_DEBUG
 //#define MINIMAL
 //#define SPI_UART  // Requires library from https://github.com/TMRh20/Sketches/tree/master/SPI_UART
@@ -38,7 +38,6 @@
 #define	 millis() 			HAL_GetTick()
 #define  HIGH 					1
 #define  LOW						0
-#define  delayMicroseconds(delay)			if(delay/100)HAL_Delay(delay/100);else HAL_Delay(1)
 #define  delay(ms) 			HAL_Delay(ms)
 #endif
 
@@ -178,6 +177,7 @@
 //stm32f407 
 #if defined (STM32F407xx)
 #ifndef NRF24L01_SPI		
+extern SPI_HandleTypeDef hspi1;
 #define NRF24L01_SPI				  hspi1
 
 

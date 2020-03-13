@@ -294,9 +294,6 @@ IRQ			Not used	Interrupt pin. Goes low when active. Pin functionality is active,
 
 #define NRF24L01_CHECK_BIT(reg, bit)       (reg & (1 << bit))
 
-
-extern SPI_HandleTypeDef hspi1;
-
 /* Default SPI used */
 #ifndef NRF24L01_SPI
 #define NRF24L01_SPI				  hspi1
