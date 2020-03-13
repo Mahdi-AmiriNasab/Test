@@ -49,6 +49,7 @@ typedef enum { RF24_CRC_DISABLED = 0, RF24_CRC_8, RF24_CRC_16 } rf24_crclength_e
 /**
  * Driver for nRF24L01(+) 2.4GHz Wireless Transceiver
  */
+
 class SerialPI
 {
 	private:
@@ -87,15 +88,16 @@ private:
   bool dynamic_payloads_enabled; /**< Whether dynamic payloads are enabled. */
   uint8_t pipe0_reading_address[5]; /**< Last address set on pipe 0 for reading. */
   uint8_t addr_width; /**< The address width to use - 3,4 or 5 bytes. */
+ 
 
 
-#if defined(USE_HAL_DRIVER)
-
-void digitalWrite(uint16_t pin, bool state);
-
+ 
 
 #endif
 
+
+#if defined(USE_HAL_DRIVER)
+void digitalWrite(uint16_t pin, bool state);
 protected:
   /**
    * SPI transactions
@@ -122,7 +124,15 @@ public:
    *  These are the main methods you need to operate the chip
    */
   /**@{*/
+	
+  /**
+   * Retrieve the current status of the chip
+   *
+   * @return Current value of status register
+   */
+  uint8_t get_status(void);
 
+  
   /**
    * Arduino Constructor
    *
