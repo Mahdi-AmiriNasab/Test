@@ -124,14 +124,6 @@ public:
    *  These are the main methods you need to operate the chip
    */
   /**@{*/
-	
-  /**
-   * Retrieve the current status of the chip
-   *
-   * @return Current value of status register
-   */
-  uint8_t get_status(void);
-
   
   /**
    * Arduino Constructor
