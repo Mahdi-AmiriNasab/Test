@@ -75,7 +75,7 @@ void Error_Handler(void);
 #define LED_BLUE_Pin GPIO_PIN_15
 #define LED_BLUE_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */
-
+#define CPU_Freq_MHZ 16
 
 
 /* USER CODE END Private defines */
