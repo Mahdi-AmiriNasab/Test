@@ -54,7 +54,8 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
-uint8_t print_buffer[100] ,nrf_receive [100];
+uint8_t print_buffer[100] ,nrf_receive [100] , radio_PayLoadData[35];
+uint8_t radio_channel ,radio_PAlevel, radio_DataRate, radio_crcLength, radio_PayLoadSize;
 //const uint8_t tx_address[6] = "00001";
 /* USER CODE END PV */
 
@@ -66,6 +67,7 @@ static void MX_UART4_Init(void);
 /* USER CODE BEGIN PFP */
 void make_command(uint8_t * REG, uint8_t cmd , uint8_t state);
 void R_Register (uint8_t addr[], uint8_t byte_to_read ,uint8_t * readed_bytes);
+const char text[] = "Hello\nThis is a test";
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -123,31 +125,46 @@ int main(void)
 	RF24 radio(NRF24L01_CE_PIN, NRF24L01_CSN_PIN);
 	radio.begin();
 	radio.openWritingPipe(txaddress);
-	radio.setPALevel(RF24_PA_MIN);
-	radio.setDataRate(RF24_2MBPS);
+	radio.setPALevel(RF24_PA_HIGH);
+	radio.setDataRate(RF24_1MBPS);
+	radio.setCRCLength(RF24_CRC_16);
   radio.setChannel(10);
 	radio.stopListening();
-	const char text[] = "Hello\nThis is a test";
 	
-	sprintf( (char  *)print_buffer, (const char *)"channel number = 0x%02x" ,radio.getChannel());
-	CDC_Transmit_FS(print_buffer, sizeof(print_buffer));
-	
-	sprintf( (char  *)print_buffer, (const char *)"DataRate = 0x%02x" ,radio.getDataRate());
-	CDC_Transmit_FS(print_buffer, sizeof(print_buffer));
-	
-	sprintf( (char  *)print_buffer, (const char *)"STATUS = 0x%02x" ,radio.get_status());
-	CDC_Transmit_FS(print_buffer, sizeof(print_buffer));
-	
-	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
+  radio_channel = radio.getChannel();
+  radio_crcLength = radio.getCRCLength();
+  radio_PayLoadSize = radio.getPayloadSize();
+  radio_PAlevel = radio.getPALevel();
+  radio.read(radio_PayLoadData, 32);
+  sprintf((char *)print_buffer, "channel: 0x%02x \nCRC Length: 0x%02x \nPay Load Size: 0x%02x \nPA level: 0x%02x \nData Rate: 0x%02x \n Pay Load data: ",
+  radio_channel, radio_crcLength, radio_PayLoadSize, radio_PAlevel, radio_DataRate);
+ // CDC_Transmit_FS(print_buffer, strlen((const char *)print_buffer));
+  CDC_Transmit_FS(print_buffer, 32);
 
+	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
+	
 	while (1)
   {
-		radio.write(&text, sizeof(text));
-		HAL_Delay(500);
-		HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
-		HAL_Delay(500);
-    HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
-		/* USER CODE END WHILE */
+		if(radio.write(&text, 20))
+		{
+			HAL_Delay(500);
+			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
+			HAL_Delay(500);
+			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
+		}
+		else
+		{
+			HAL_Delay(500);
+			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+			HAL_Delay(500);
+			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+		}
+		CDC_Transmit_FS((uint8_t *)"\n", 1);
+		radio.read(radio_PayLoadData, 32);
+		CDC_Transmit_FS(radio_PayLoadData, 32);
+		CDC_Transmit_FS((uint8_t *)"\n", 1);
+		
+			/* USER CODE END WHILE */
 		/* USER CODE BEGIN 3 */
 		
 	}
@@ -344,13 +361,13 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-	while(1)
-	{
-		HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
-		HAL_Delay(500);
-		HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
-		HAL_Delay(500);
-	}
+//	while(1)
+//	{
+//		HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+//		HAL_Delay(500);
+//		HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+//		HAL_Delay(500);
+//	}
 	/* USER CODE END Error_Handler_Debug */
 }
 

@@ -39,6 +39,7 @@
 #define  HIGH 					1
 #define  LOW						0
 #define  delay(ms) 			HAL_Delay(ms)
+#define  nrf_del 	2
 #endif
 
 #if defined (SPI_HAS_TRANSACTION) && !defined (SPI_UART) && !defined (SOFTSPI)

@@ -37,19 +37,20 @@ uint8_t SerialPI::transfer(uint8_t send)
 		if(transmision_status == HAL_ERROR)
 		{
 			uint8_t print_buf[50] = "Transmision HAL ERROR\n";
-			CDC_Transmit_FS(print_buf,sizeof(print_buf));
+			CDC_Transmit_FS(print_buf,strlen((const char * )print_buf));
 		}
 		if(transmision_status == HAL_BUSY)
 		{
 			uint8_t print_buf[50] = "Transmision HAL BUSY\n";
-			CDC_Transmit_FS(print_buf,sizeof(print_buf));
+			CDC_Transmit_FS(print_buf, strlen((const char * )print_buf));
 		}
 		if(transmision_status == HAL_TIMEOUT)
 		{
 			uint8_t print_buf[50] = "Transmision HAL TIMEOUT\n";
-			CDC_Transmit_FS(print_buf,sizeof(print_buf));
+			CDC_Transmit_FS(print_buf, strlen((const char * )print_buf));
 		}		
 	}
+	HAL_Delay(nrf_del);
 	#endif
 	if (transmision_status != HAL_OK)
 	{
@@ -67,19 +68,21 @@ void RF24::digitalWrite(uint16_t pin, bool state)
 {
 	if(pin == csn_pin)
 	{
+		HAL_Delay(nrf_del);
 		if (state)
 			NRF24L01_CSN_HIGH;
 		else
 			NRF24L01_CSN_LOW;
-		HAL_Delay(1);
+		HAL_Delay(nrf_del);
 	}
 	else if(pin == ce_pin)
 	{
+		HAL_Delay(nrf_del);
 		if (state)
 			NRF24L01_CE_HIGH;
 		else
 			NRF24L01_CE_LOW;
-		HAL_Delay(1);
+		HAL_Delay(nrf_del);
 	}
 	else
 	{
@@ -344,7 +347,8 @@ uint8_t RF24::write_payload(const void* buf, uint8_t data_len, const uint8_t wri
     endTransaction();
 
     #else // !defined(RF24_LINUX)
-
+		status = write_register(NRF_STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT)); // clear the bits
+		
     beginTransaction();
     status = _SPI.transfer(writeType);
     while (data_len--) {
