@@ -68,6 +68,8 @@ static void MX_UART4_Init(void);
 void make_command(uint8_t * REG, uint8_t cmd , uint8_t state);
 void R_Register (uint8_t addr[], uint8_t byte_to_read ,uint8_t * readed_bytes);
 const char text[] = "Hello\nThis is a test";
+void Blink_LED(uint16_t Pin, uint32_t Delay);
+void print_CDC(const char * str);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -116,54 +118,65 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	
 	#define tranacting_number 2
-	const uint8_t txaddress[6] = "00001";
+	const uint8_t address[6] = "00001";
 	//	const uint8_t rxaddress[6] = "00001";
 	//uint8_t nrf_status = 50, transmision_status  = 50; // not 0 , 01 , ff
 	//uint8_t flag = 1;
 	
-	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
+	//while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
+	HAL_Delay(10);
 	RF24 radio(NRF24L01_CE_PIN, NRF24L01_CSN_PIN);
 	radio.begin();
-	radio.openWritingPipe(txaddress);
+	radio.openWritingPipe(address);
+	radio.openReadingPipe(0, address);
 	radio.setPALevel(RF24_PA_LOW);
 	radio.setDataRate(RF24_1MBPS);
 	radio.setCRCLength(RF24_CRC_16);
   radio.setChannel(10);
 	radio.stopListening();
 	
-  radio_channel = radio.getChannel();
-  radio_crcLength = radio.getCRCLength();
-  radio_PayLoadSize = radio.getPayloadSize();
-  radio_PAlevel = radio.getPALevel();
-  radio.read(radio_PayLoadData, 32);
-  sprintf((char *)print_buffer, "channel: 0x%02x \nCRC Length: 0x%02x \nPay Load Size: 0x%02x \nPA level: 0x%02x \nData Rate: 0x%02x \n Pay Load data: ",
-  radio_channel, radio_crcLength, radio_PayLoadSize, radio_PAlevel, radio_DataRate);
- // CDC_Transmit_FS(print_buffer, strlen((const char *)print_buffer));
-  CDC_Transmit_FS(print_buffer, 32);
+//  radio_channel = radio.getChannel();
+//  radio_crcLength = radio.getCRCLength();
+//  radio_PayLoadSize = radio.getPayloadSize();
+//  radio_PAlevel = radio.getPALevel();
+//  radio.read(radio_PayLoadData, 32);
+//  sprintf((char *)print_buffer, "channel: 0x%02x \nCRC Length: 0x%02x \nPay Load Size: 0x%02x \nPA level: 0x%02x \nData Rate: 0x%02x \n Pay Load data: ",
+//  radio_channel, radio_crcLength, radio_PayLoadSize, radio_PAlevel, radio_DataRate);
+// // CDC_Transmit_FS(print_buffer, strlen((const char *)print_buffer));
+//  CDC_Transmit_FS(print_buffer, 32);
 
-	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
+	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin))
+	{
+		HAL_Delay(200);
+		print_CDC("CDC Test\n");
+	}
+		;
 	
 	while (1)
   {
 		if(radio.write(&text, 20))
 		{
-			HAL_Delay(500);
-			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
-			HAL_Delay(500);
-			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
+			radio.startListening();
+			Blink_LED(LED_GREEN_Pin, 50);
+			if(radio.available())
+			{
+				radio.read(nrf_receive , 32);
+				print_CDC((const char *)nrf_receive);
+				print_CDC("\n");
+				Blink_LED(LED_BLUE_Pin, 100);
+			}
+			radio.stopListening();
 		}
 		else
 		{
-			HAL_Delay(500);
-			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
-			HAL_Delay(500);
-			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+			Blink_LED(LED_RED_Pin, 50);
 		}
-		CDC_Transmit_FS((uint8_t *)"\n", 1);
-		radio.read(radio_PayLoadData, 32);
-		CDC_Transmit_FS(radio_PayLoadData, 32);
-		CDC_Transmit_FS((uint8_t *)"\n", 1);
 		
+		
+		
+		
+		
+		HAL_Delay(500);
 			/* USER CODE END WHILE */
 		/* USER CODE BEGIN 3 */
 		
@@ -351,8 +364,44 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-/* USER CODE END 4 */
+/**
+  * @brief  Print through CDC (Virtual COM port).
+  * @retval None
+*/
+void print_CDC(const char * str)
+{
+	uint8_t buf[100];
+	sprintf((char *)buf, str);
+	CDC_Transmit_FS((uint8_t *)buf, strlen((char *)buf));
+}
 
+void print_CDC(const char * str, uint8_t var1)
+{
+	uint8_t buf[100];
+	sprintf((char *)buf, str, var1);
+	CDC_Transmit_FS((uint8_t *)buf, strlen((char *)buf));
+}
+
+void print_CDC(const char * str, uint8_t var1, uint8_t var2)
+{
+	uint8_t buf[100];
+	sprintf((char *)buf, str, var1, var2);
+	CDC_Transmit_FS((uint8_t *)buf, strlen((char *)buf));
+}
+
+/**
+  * @brief  This function bliks the specified led within passed delay.
+  * @retval None
+*/
+void Blink_LED(uint16_t Pin, uint32_t Delay)
+{
+	HAL_GPIO_WritePin(GPIOD, Pin, GPIO_PIN_SET); // GPIOD is LEDs port
+	HAL_Delay(Delay);
+	HAL_GPIO_WritePin(GPIOD, Pin, GPIO_PIN_RESET); // GPIOD is LEDs port
+	HAL_Delay(Delay);
+}
+
+/* USER CODE END 4 */
 /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
