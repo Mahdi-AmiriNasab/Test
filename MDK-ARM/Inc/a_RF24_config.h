@@ -39,7 +39,43 @@
 #define  HIGH 					1
 #define  LOW						0
 #define  delay(ms) 			HAL_Delay(ms)
-#define  nrf_del 	2
+#define  nrf_del 				0
+
+#ifndef NRF24L01_SPI
+#define NRF24L01_SPI				  hspi1
+extern SPI_HandleTypeDef 			NRF24L01_SPI;
+#ifndef NRF24L01_SPI 
+#error "SPI Structure not defined"
+#endif
+
+/* SPI chip enable pin */
+#define NRF24L01_CSN_PORT			CSel_GPIO_Port
+#define NRF24L01_CSN_PIN			CSel_Pin
+
+#ifndef NRF24L01_CSN_PIN
+#error "CSN Pin is set on default"
+#endif
+
+/* Chip enable for transmitting */
+#define NRF24L01_CE_PORT			TxRx_GPIO_Port
+#define NRF24L01_CE_PIN				TxRx_Pin
+
+#ifndef NRF24L01_CE_PIN
+#error "CE Pin is set on default"
+#endif
+
+/* Pins configuration */
+#define NRF24L01_CE_LOW				HAL_GPIO_WritePin(NRF24L01_CE_PORT,NRF24L01_CE_PIN,GPIO_PIN_RESET)
+#define NRF24L01_CE_HIGH			HAL_GPIO_WritePin(NRF24L01_CE_PORT,NRF24L01_CE_PIN,GPIO_PIN_SET) 
+#define NRF24L01_CSN_LOW			HAL_GPIO_WritePin(NRF24L01_CSN_PORT,NRF24L01_CSN_PIN,GPIO_PIN_RESET)
+#define NRF24L01_CSN_HIGH			HAL_GPIO_WritePin(NRF24L01_CSN_PORT,NRF24L01_CSN_PIN,GPIO_PIN_SET)
+
+/* Interrupt masks */
+#define NRF24L01_IRQ_DATA_READY     0x40 /*!< Data ready for receive */
+#define NRF24L01_IRQ_TRAN_OK        0x20 /*!< Transmission went OK */
+#define NRF24L01_IRQ_MAX_RT         0x10 /*!< Max retransmissions reached, last transmission failed */
+#endif
+
 #endif
 
 #if defined (SPI_HAS_TRANSACTION) && !defined (SPI_UART) && !defined (SOFTSPI)
@@ -176,34 +212,4 @@
   #endif // !defined (ARDUINO) || defined (ESP_PLATFORM) || defined (__arm__) || defined (__ARDUINO_X86__) && !defined (XMEGA)
 #endif //Everything else
 //stm32f407 
-#if defined (STM32F407xx)
-#ifndef NRF24L01_SPI		
-extern SPI_HandleTypeDef hspi1;
-#define NRF24L01_SPI				  hspi1
-
-
-/* SPI chip enable pin */
-#ifndef NRF24L01_CSN_PIN
-#define NRF24L01_CSN_PORT			CSel_GPIO_Port
-#define NRF24L01_CSN_PIN			CSel_Pin
-#endif
-
-/* Chip enable for transmitting */
-#ifndef NRF24L01_CE_PIN
-#define NRF24L01_CE_PORT			TxRx_GPIO_Port
-#define NRF24L01_CE_PIN				TxRx_Pin
-#endif
-
-/* Pins configuration */
-#define NRF24L01_CE_LOW				HAL_GPIO_WritePin(NRF24L01_CE_PORT,NRF24L01_CE_PIN,GPIO_PIN_RESET)
-#define NRF24L01_CE_HIGH			HAL_GPIO_WritePin(NRF24L01_CE_PORT,NRF24L01_CE_PIN,GPIO_PIN_SET) 
-#define NRF24L01_CSN_LOW			HAL_GPIO_WritePin(NRF24L01_CSN_PORT,NRF24L01_CSN_PIN,GPIO_PIN_RESET)
-#define NRF24L01_CSN_HIGH			HAL_GPIO_WritePin(NRF24L01_CSN_PORT,NRF24L01_CSN_PIN,GPIO_PIN_SET)
-
-/* Interrupt masks */
-#define NRF24L01_IRQ_DATA_READY     0x40 /*!< Data ready for receive */
-#define NRF24L01_IRQ_TRAN_OK        0x20 /*!< Transmission went OK */
-#define NRF24L01_IRQ_MAX_RT         0x10 /*!< Max retransmissions reached, last transmission failed */
-#endif
-#endif
 #endif // __RF24_CONFIG_H__

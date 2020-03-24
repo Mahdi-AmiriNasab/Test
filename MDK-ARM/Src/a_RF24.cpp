@@ -347,7 +347,7 @@ uint8_t RF24::write_payload(const void* buf, uint8_t data_len, const uint8_t wri
     endTransaction();
 
     #else // !defined(RF24_LINUX)
-		status = write_register(NRF_STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT)); // clear the bits
+		//status = write_register(NRF_STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT)); // clear the bits
 		
     beginTransaction();
     status = _SPI.transfer(writeType);

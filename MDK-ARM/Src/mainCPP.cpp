@@ -125,7 +125,7 @@ int main(void)
 	RF24 radio(NRF24L01_CE_PIN, NRF24L01_CSN_PIN);
 	radio.begin();
 	radio.openWritingPipe(txaddress);
-	radio.setPALevel(RF24_PA_HIGH);
+	radio.setPALevel(RF24_PA_LOW);
 	radio.setDataRate(RF24_1MBPS);
 	radio.setCRCLength(RF24_CRC_16);
   radio.setChannel(10);
