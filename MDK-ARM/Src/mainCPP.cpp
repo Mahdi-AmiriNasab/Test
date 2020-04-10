@@ -49,8 +49,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
-
 UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
@@ -64,6 +64,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_UART4_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 void make_command(uint8_t * REG, uint8_t cmd , uint8_t state);
 void R_Register (uint8_t addr[], uint8_t byte_to_read ,uint8_t * readed_bytes);
@@ -124,9 +125,10 @@ int main(void)
 	//uint8_t flag = 1;
 	
 	//while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
-	HAL_Delay(10);
 	RF24 radio(NRF24L01_CE_PIN, NRF24L01_CSN_PIN);
-	radio.begin();
+	while(!radio.begin())
+		Blink_LED(LED_RED_Pin, 200);
+	radio.maskIRQ(IRQ_TX_OK_DIS ,IRQ_TX_FAIL_DIS, IRQ_RX_READY_EN);
 	radio.openWritingPipe(address);
 	radio.openReadingPipe(0, address);
 	radio.setPALevel(RF24_PA_LOW);
@@ -134,6 +136,7 @@ int main(void)
 	radio.setCRCLength(RF24_CRC_16);
   radio.setChannel(10);
 	radio.stopListening();
+	
 	
 //  radio_channel = radio.getChannel();
 //  radio_crcLength = radio.getCRCLength();
@@ -145,20 +148,20 @@ int main(void)
 // // CDC_Transmit_FS(print_buffer, strlen((const char *)print_buffer));
 //  CDC_Transmit_FS(print_buffer, 32);
 
-	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin))
-	{
-		HAL_Delay(200);
-		print_CDC("CDC Test\n");
-	}
-		;
+	while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin));
+	Blink_LED(LED_ORANGE_Pin, 100);
 	
 	while (1)
   {
+		uint32_t  ms = HAL_GetTick();
+		while(!HAL_GPIO_ReadPin(BLUE_PB_GPIO_Port ,BLUE_PB_Pin) && (ms + 5000 > HAL_GetTick() ));
+		
+		//HAL_GPIO_WritePin(LED_ORANGE_GPIO_Port, LED_ORANGE_Pin, HAL_GPIO_ReadPin(INT_GPIO_Port, INT_Pin));
 		if(radio.write(&text, 20))
 		{
 			radio.startListening();
 			Blink_LED(LED_GREEN_Pin, 50);
-			if(radio.available())
+			if(radio.available() /*&& (!HAL_GPIO_ReadPin(INT_GPIO_Port, INT_Pin))*/)
 			{
 				radio.read(nrf_receive , 32);
 				print_CDC((const char *)nrf_receive);
@@ -172,7 +175,7 @@ int main(void)
 			Blink_LED(LED_RED_Pin, 50);
 		}
 		
-		
+	
 		
 		
 		
@@ -270,6 +273,40 @@ static void MX_SPI1_Init(void)
   * @param None
   * @retval None
   */
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 1000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
+}
+
 static void MX_UART4_Init(void)
 {
 
@@ -339,10 +376,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CSel_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PC4 INT_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|INT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  /*Configure GPIO pins : INT_Pin */
+  GPIO_InitStruct.Pin = INT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
